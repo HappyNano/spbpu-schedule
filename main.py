@@ -30,6 +30,28 @@ def gen_list_markup(arr: List[Any], name: str, page: int = 0, page_size: int = 4
         )
     return markup
 
+@bot.callback_query_handler(func=lambda call: call.data.startswith("fc"))
+def callback_query_fc(call):
+    value: str = call.data[3:]
+    if value.startswith("page"):
+        page: int = int(value[4:])
+        if page == -1:
+            bot.answer_callback_query(call.id, "End")
+            return
+        faculties_names: List[str] = list(map(lambda x: x.name, faculties_arr))
+        bot.edit_message_reply_markup(
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            reply_markup=gen_list_markup(faculties_names, "fc", page)
+        )
+    else:
+        course_names: List[str] = list(map(lambda x: x.name, cource_groups_arr[int(value)]))
+        bot.edit_message_reply_markup(
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            reply_markup=gen_list_markup(course_names, f"cs_{value}", page_size = len(course_names))
+        )
+
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
     faculties_names: List[str] = list(map(lambda x: x.name, faculties_arr))
