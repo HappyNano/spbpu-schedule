@@ -33,7 +33,7 @@ def get(faculty_href: str) -> List[CourseGroups]:
         groups = course.find_all(class_='groups-list__item')
         for group in groups:
             group = group.find('a')
-            arr[-1].add_group(
+            arr[-1].groups.append(
                 Group(
                     group.text,
                     int(group['href'].replace(faculty_href + '/', '')),
