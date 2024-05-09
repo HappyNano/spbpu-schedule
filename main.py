@@ -33,6 +33,18 @@ def gen_list_markup(arr: List[Any], name: str, page: int = 0, page_size: int = 4
         )
     return markup
 
+def generate_days_markup(page=1):
+    day = datetime.datetime.now(pytz.timezone('Europe/Moscow'))
+    day = day if day.isoweekday() < 4 else day + datetime.timedelta(days=7)
+    day -= datetime.timedelta(days=day.isoweekday() - 1)
+    days_arr = []
+    for week_i in range(-1, 3):
+        days_arr += [(wd + ". " + (day + datetime.timedelta(days=i, weeks=week_i)).strftime('%d %B, %Y') ) for i, wd in enumerate(["Пн", "Вт", "Ср", "Чт", "Пт", "Сб"])]
+    today_weekday = datetime.datetime.today().isoweekday()
+    if today_weekday < 7:
+        days_arr[6 + today_weekday - 1] += ' ' + "📌"
+    return gen_list_markup(days_arr, "sw", page=page, page_size = 6)
+
 @bot.callback_query_handler(func=lambda call: call.data.startswith("fc"))
 def callback_query_fc(call):
     value: str = call.data[3:]
@@ -85,9 +97,72 @@ def callback_query_gr(call):
         db.add_user(call.message.chat.id, group_key)
         bot.send_message(chat_id=call.message.chat.id, text=f"Твоя группа - {group_name}")
 
+@bot.callback_query_handler(func=lambda call: call.data.startswith("sw"))
+def callback_query_sw(call):
+    value = call.data[3:]
+    if value.startswith("page"):
+        page: int = int(value[4:])
+        if page == -1:
+            bot.answer_callback_query(call.id, "End")
+            return
+        bot.edit_message_text(
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            text="Выбери день:",
+            reply_markup=generate_days_markup(page),
+            parse_mode='HTML'
+        )
+        return
+    if value == "back":
+        bot.edit_message_text(
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            text="Выбери день:",
+            reply_markup=generate_days_markup(),
+            parse_mode='HTML'
+        )
+        return
+
+    group_key = db.get_group_id(user_id=call.message.chat.id)
+    result = ga.get(f'на неделю {int(value) // 6 - 1}', group_key)
+    result: str = result[int(value) % 6]
+
+    markup = InlineKeyboardMarkup()
+    markup.row_width = 1
+    markup.add(InlineKeyboardButton("Назад", callback_data="sw_back"))
+    bot.edit_message_text(
+        chat_id=call.message.chat.id,
+        message_id=call.message.message_id,
+        text=result if len(result) != 0 else "Отдых!",
+        reply_markup=markup,
+        parse_mode='HTML'
+    )
+
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
     faculties_names: List[str] = list(map(lambda x: x.name, faculties_arr))
     bot.reply_to(message, "Привет, выбери группу:", reply_markup=gen_list_markup(faculties_names, "fc"))
+
+@bot.message_handler(commands=['schedule'])
+def send_schedule(message):
+    group_key = db.get_group_id(user_id=message.chat.id)
+    if group_key is None:
+        bot.reply_to(message, "Выбери группу!")
+        return
+
+    result: str = ga.get('на сегодня', group_key)[0]
+    bot.reply_to(message, result if len(result) != 0 else "Отдых!", parse_mode='HTML')
+
+@bot.message_handler(commands=['schedule_week'])
+def send_schedule_week(message):
+    group_key = db.get_group_id(user_id=message.chat.id)
+    if group_key is None:
+        bot.reply_to(message, "Выбери группу!")
+        return
+    bot.reply_to(
+        message, "Выбери день:",
+        reply_markup=generate_days_markup(),
+        parse_mode='HTML'
+    )
 
 bot.infinity_polling()
