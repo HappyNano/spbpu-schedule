@@ -62,6 +62,26 @@ def callback_query_cs(call):
         reply_markup=gen_list_markup(group_names, f"gr_{values[0]}_{values[1]}", page_size=6)
     )
 
+@bot.callback_query_handler(func=lambda call: call.data.startswith("gr"))
+def callback_query_gr(call):
+    values = call.data[3:].split('_')
+    if values[2].startswith("page"):
+        page: int = int(values[2][4:])
+        if page == -1:
+            bot.answer_callback_query(call.id, "End")
+            return
+        group_names: List[str] = list(map(lambda x: x.name, cource_groups_arr[int(values[0])][int(values[1])].groups))
+        bot.edit_message_reply_markup(
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            reply_markup=gen_list_markup(group_names, f"gr_{int(values[0])}_{int(values[1])}", page, page_size=6)
+        )
+    else:
+        # HINT: GET: group_key = cource_groups_arr[int(values[0])][int(values[1])].groups[int(values[2])].key
+        group_name = cource_groups_arr[int(values[0])][int(values[1])].groups[int(values[2])].name
+        # TODO: Adding user to database
+        bot.send_message(chat_id=call.message.chat.id, text=f"Твоя группа - {group_name}")
+
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
     faculties_names: List[str] = list(map(lambda x: x.name, faculties_arr))
