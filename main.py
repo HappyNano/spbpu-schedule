@@ -52,6 +52,16 @@ def callback_query_fc(call):
             reply_markup=gen_list_markup(course_names, f"cs_{value}", page_size = len(course_names))
         )
 
+@bot.callback_query_handler(func=lambda call: call.data.startswith("cs"))
+def callback_query_cs(call):
+    values = list(map(int, call.data[3:].split('_')))
+    group_names: List[str] = list(map(lambda x: x.name, cource_groups_arr[values[0]][values[1]].groups))
+    bot.edit_message_reply_markup(
+        chat_id=call.message.chat.id,
+        message_id=call.message.message_id,
+        reply_markup=gen_list_markup(group_names, f"gr_{values[0]}_{values[1]}", page_size=6)
+    )
+
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
     faculties_names: List[str] = list(map(lambda x: x.name, faculties_arr))
