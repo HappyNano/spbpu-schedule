@@ -1,5 +1,5 @@
-from typing import List
 import requests
+from typing import List
 
 from bs4 import BeautifulSoup
 
@@ -51,6 +51,11 @@ def get(faculty_href: str) -> List[CourseGroups]:
         groups = course.find_all(class_='groups-list__item')
         for group in groups:
             group = group.find('a')
-            arr[-1].add_group(Group(group.text, int(group['href'].replace(faculty_href + '/', ''))))
+            arr[-1].add_group(
+                Group(
+                    group.text,
+                    int(group['href'].replace(faculty_href + '/', '')),
+                )
+            )
 
     return arr
