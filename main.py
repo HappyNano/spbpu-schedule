@@ -9,6 +9,9 @@ import config.config as config
 from parser import faculties, cource_groups
 
 import schedule.getapi as ga
+from database import database
+
+db = database.Database()
 
 faculties_arr = faculties.get()
 cource_groups_arr = list(map(lambda x: cource_groups.get(x.href), faculties_arr))
@@ -77,9 +80,9 @@ def callback_query_gr(call):
             reply_markup=gen_list_markup(group_names, f"gr_{int(values[0])}_{int(values[1])}", page, page_size=6)
         )
     else:
-        # HINT: GET: group_key = cource_groups_arr[int(values[0])][int(values[1])].groups[int(values[2])].key
+        group_key = cource_groups_arr[int(values[0])][int(values[1])].groups[int(values[2])].key
         group_name = cource_groups_arr[int(values[0])][int(values[1])].groups[int(values[2])].name
-        # TODO: Adding user to database
+        db.add_user(call.message.chat.id, group_key)
         bot.send_message(chat_id=call.message.chat.id, text=f"Твоя группа - {group_name}")
 
 @bot.message_handler(commands=['start', 'help'])
