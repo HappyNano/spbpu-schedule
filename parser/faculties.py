@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import requests
 
 from bs4 import BeautifulSoup
@@ -5,14 +6,10 @@ from bs4 import BeautifulSoup
 from config import config
 
 
+@dataclass
 class Faculty:
-    def __init__(self, name: str, href: str):
-        self.name = name
-        self.href = href
-    
-    @classmethod
-    def create(cls, element):
-        return Faculty(element.text, element['href'])
+    name: str
+    href: str
 
 
 def get():
@@ -20,7 +17,7 @@ def get():
 
     soup = BeautifulSoup(response.content, 'html.parser')
     faculties = [
-        Faculty.create(tag) for tag in soup.find_all('a', class_='faculty-list__link')
+        Faculty(tag.text, tag['href']) for tag in soup.find_all('a', class_='faculty-list__link')
     ]
 
     return faculties
