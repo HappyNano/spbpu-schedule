@@ -1,5 +1,5 @@
 import psycopg2
-from config import config
+from spbpu_schedule.storage import config
 
 class Database:
     def __init__(self):

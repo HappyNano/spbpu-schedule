@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 import requests
+import typing as tp
 
 from bs4 import BeautifulSoup
 
-from config import config
+from spbpu_schedule.storage import config
 
 
 @dataclass
@@ -12,8 +13,8 @@ class Faculty:
     href: str
 
 
-def get():
-    response = requests.get(config.FACULTIES_URL)
+def get(faculties_url: str) -> tp.List[Faculty]:
+    response = requests.get(faculties_url)
 
     soup = BeautifulSoup(response.content, 'html.parser')
     faculties = [

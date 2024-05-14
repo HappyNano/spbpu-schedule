@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 import requests
-from typing import List
+import typing as tp
 
 from bs4 import BeautifulSoup
 
-from config import config
+from spbpu_schedule.storage import config
 
 
 @dataclass
@@ -16,16 +16,16 @@ class Group:
 @dataclass
 class CourseGroups:
     name: str
-    groups: List[Group]
+    groups: tp.List[Group]
 
 
-def get(faculty_href: str) -> List[CourseGroups]:
-    response = requests.get(config.FACULTIES_URL + faculty_href)
+def get(faculty_href: str) -> tp.List[CourseGroups]:
+    response = requests.get(faculty_href)
 
     soup = BeautifulSoup(response.content, 'html.parser')
     courses = soup.find_all(class_='faculty__level')
 
-    arr: List[CourseGroups] = []
+    arr: tp.List[CourseGroups] = []
     for course in courses:
         arr.append(
             CourseGroups(course.find('h3').text, []),

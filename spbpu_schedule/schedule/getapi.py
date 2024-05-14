@@ -1,27 +1,30 @@
 import datetime
 import json
+import typing as tp
 
 import pytz
 
-from typing import List
-from config import config
-from .tools import getData
+from spbpu_schedule.storage import config
+from spbpu_schedule.schedule.tools import getData
 
 def parse_subject(subject: json) -> str:
     subj = f"{subject['typeObj']['name']}"
     subj = ("&#x1f4d6" if subj.startswith("Лекц") else "&#x1f4dd") + " " + subj
     result = f"&#x1f559 {subject['time_start']} - {subject['time_end']}\n&#x1f3f7 {subject['subject']}\n{subj}\n"
+    
     teachers = subject['teachers']
     if teachers is not None:
-        for i, teacher in enumerate(teachers):
+        for teacher in teachers:
             result += "&#x1f9d1&#x200d&#x1f3eb " + teacher['full_name'] + '\n'
     auditories = subject['auditories']
+
     if auditories is not None:
-        for i, auditory in enumerate(auditories):
+        for auditory in auditories:
             audty = f"{auditory['name']}, {auditory['building']['name']}\n"
             audty = ("&#x1f4bb" if audty.startswith("Дист") else "&#x1f6b6") + " " + audty
             result += audty
     return result
+
 
 def parse_day(day: json) -> str:
     result = ""
@@ -29,7 +32,8 @@ def parse_day(day: json) -> str:
         result += parse_subject(subject) + '\n'
     return result
 
-def get(action: str, group_id: int) -> List[str]:
+
+def get(action: str, group_id: int) -> tp.List[str]:
     today = datetime.datetime.now(pytz.timezone('Europe/Moscow'))
     transform_action = {
         'на сегодня': today,

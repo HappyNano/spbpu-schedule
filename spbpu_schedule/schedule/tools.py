@@ -2,11 +2,13 @@ import json
 import asyncio
 import httpx
 
-from config import config
+from spbpu_schedule.storage import config
+
 
 def getData(url: str) -> json:
     with httpx.Client() as client:
         return (client.get(url=url)).json()
+
 
 def is_groupId_correct(group_id: int) -> bool:
     try:
