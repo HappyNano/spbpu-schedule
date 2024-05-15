@@ -15,7 +15,7 @@ from spbpu_schedule.parser import course_groups
         pytest.param(
             'ok_faculties.html',
             'asd',
-            '3',
+            [],
             id='ok',
         ),
     )
