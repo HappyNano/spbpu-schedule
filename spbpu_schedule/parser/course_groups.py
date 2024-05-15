@@ -19,10 +19,8 @@ class CourseGroups:
     groups: tp.List[Group]
 
 
-def get(faculty_href: str) -> tp.List[CourseGroups]:
-    response = requests.get(faculty_href)
-
-    soup = BeautifulSoup(response.content, 'html.parser')
+def get(faculty_href: str, html_content: str) -> tp.List[CourseGroups]:
+    soup = BeautifulSoup(html_content, 'html.parser')
     courses = soup.find_all(class_='faculty__level')
 
     arr: tp.List[CourseGroups] = []

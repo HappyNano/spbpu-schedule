@@ -1,5 +1,6 @@
 import math
 import datetime
+import requests as rq
 import typing as tp
 
 import pytz
@@ -7,17 +8,26 @@ import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from spbpu_schedule.database import database
-from spbpu_schedule.parser import faculties, cource_groups
+from spbpu_schedule.parser import course_groups, faculties
 from spbpu_schedule.schedule import getapi as ga
 import spbpu_schedule.storage.config as config
 
 
 db = database.Database()
 
-faculties_arr = faculties.get(config.FACULTIES_URL)
-cource_groups_arr = [
-    cource_groups.get(config.FACULTIES_URL + faculty.href) for faculty in faculties_arr
-]
+faculties_response = rq.get(config.FACULTIES_URL)
+faculties_arr = faculties.get(faculties_response.content)
+
+course_groups_arr: tp.List[course_groups.CourseGroups] = []
+for faculty in faculties_arr:
+    faculty_href = config.FACULTIES_URL + faculty.href
+    faculty_response = rq.get(faculty_href)
+    course_groups_arr.append(
+        course_groups.get(
+            config.FACULTIES_URL + faculty.href,
+            faculty_response.content,
+        )
+    )
 
 bot = telebot.TeleBot(config.BOT_KEY)
 
@@ -66,7 +76,7 @@ def callback_query_fc(call):
             reply_markup=gen_list_markup(faculties_names, "fc", page)
         )
     else:
-        course_names: tp.List[str] = list(map(lambda x: x.name, cource_groups_arr[int(value)]))
+        course_names: tp.List[str] = list(map(lambda x: x.name, course_groups_arr[int(value)]))
         bot.edit_message_reply_markup(
             chat_id=call.message.chat.id,
             message_id=call.message.message_id,
@@ -77,7 +87,7 @@ def callback_query_fc(call):
 @bot.callback_query_handler(func=lambda call: call.data.startswith("cs"))
 def callback_query_cs(call):
     values = list(map(int, call.data[3:].split('_')))
-    group_names: tp.List[str] = list(map(lambda x: x.name, cource_groups_arr[values[0]][values[1]].groups))
+    group_names: tp.List[str] = list(map(lambda x: x.name, course_groups_arr[values[0]][values[1]].groups))
     bot.edit_message_reply_markup(
         chat_id=call.message.chat.id,
         message_id=call.message.message_id,
@@ -93,15 +103,15 @@ def callback_query_gr(call):
         if page == -1:
             bot.answer_callback_query(call.id, "End")
             return
-        group_names: List[str] = list(map(lambda x: x.name, cource_groups_arr[int(values[0])][int(values[1])].groups))
+        group_names: List[str] = list(map(lambda x: x.name, course_groups_arr[int(values[0])][int(values[1])].groups))
         bot.edit_message_reply_markup(
             chat_id=call.message.chat.id,
             message_id=call.message.message_id,
             reply_markup=gen_list_markup(group_names, f"gr_{int(values[0])}_{int(values[1])}", page, page_size=6)
         )
     else:
-        group_key = cource_groups_arr[int(values[0])][int(values[1])].groups[int(values[2])].key
-        group_name = cource_groups_arr[int(values[0])][int(values[1])].groups[int(values[2])].name
+        group_key = course_groups_arr[int(values[0])][int(values[1])].groups[int(values[2])].key
+        group_name = course_groups_arr[int(values[0])][int(values[1])].groups[int(values[2])].name
         db.add_user(call.message.chat.id, group_key)
         bot.send_message(chat_id=call.message.chat.id, text=f"Твоя группа - {group_name}")
 

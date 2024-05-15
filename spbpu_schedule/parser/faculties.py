@@ -13,10 +13,8 @@ class Faculty:
     href: str
 
 
-def get(faculties_url: str) -> tp.List[Faculty]:
-    response = requests.get(faculties_url)
-
-    soup = BeautifulSoup(response.content, 'html.parser')
+def get(html_content: str) -> tp.List[Faculty]:
+    soup = BeautifulSoup(html_content, 'html.parser')
     faculties = [
         Faculty(tag.text, tag['href']) for tag in soup.find_all('a', class_='faculty-list__link')
     ]
